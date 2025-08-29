@@ -37,49 +37,71 @@ def add_transaction():
     return render_template('form.html')
 
 # Update operation: Display update transaction form
-@app.route('/edit/<int:transaction_id>', methods=['GET', 'POST'])
+@app.route("/edit/<int:transaction_id>", methods=["GET", "POST"])
 def edit_transaction(transaction_id):
     # Check if the request method is POST (form submission)
-    if request.method == "POST":
+    if request.method == 'POST':
         # Extract the updated values from the form fields
-        date = request.form['date']             # Get the 'date' field value from the form
-        amount = float(request.form['amount'])  # Get the 'amount' field value from the form and convert it to a float
-
-    # Find the transaction with the matching ID and update its values
-    for transaction in transactions:
-        if transaction['id'] == transaction_id:
-            transaction['date'] = date          # Update the 'date' field of the transaction
-            transaction['amount'] = amount      # Update the 'amount' field of the transaction
-            break                               # Exit the loop once the transaction is found and updated
-        
+        date = request.form['date']            # Get the 'date' field value from the form
+        amount = float(request.form['amount']) # Get the 'amount' field value from the form and convert it to a float
+        # Find the transaction with the matching ID and update its values
+        for transaction in transactions:
+            if transaction['id'] == transaction_id:
+                transaction['date'] = date       # Update the 'date' field of the transaction
+                transaction['amount'] = amount   # Update the 'amount' field of the transaction
+                break                            # Exit the loop once the transaction is found and updated
         # Redirect to the transactions list page after updating the transaction
         return redirect(url_for("get_transactions"))
-
-    # If the request method is GET, find the transaction with the matching ID and render the edit form
+    # Find the transaction with the matching ID and render the edit form if the request method is GET
     for transaction in transactions:
         if transaction['id'] == transaction_id:
-            # If the request method is GET, render the form template to display the add transaction form  
-            return render_template('edit.html', transaction = transaction)
+            # Render the edit form template and pass the transaction to be edited
+            return render_template("edit.html", transaction=transaction)
     
     # If the transaction with the specified ID is not found, handle this case (optional)
     return {"message": "Transaction not found"}, 404
     
 # Delete operation: Delete a transaction
 # Route to handle the deletion of an existing transaction
-@app.route('/delete/<int:transaction_id>', methods=['POST'])
+@app.route("/delete/<int:transaction_id>")
 def delete_transaction(transaction_id):
     # Find the transaction with the matching ID and remove it from the list
     for transaction in transactions:
         if transaction['id'] == transaction_id:
-            transactions.remove(transaction)    # Remove the transaction from the transactions list
-            break                               # Exit the loop once the transaction is found and removed
-        
-        # Redirect to the transactions list page after deleting the transaction
-        return redirect(url_for("get_transactions"))
+            transactions.remove(transaction)  # Remove the transaction from the transactions list
+            break                            # Exit the loop once the transaction is found and removed
+    # Redirect to the transactions list page after deleting the transaction
+    return redirect(url_for("get_transactions"))
         
         
     # If the transaction with the specified ID is not found, handle this case (optional)
     return {"message": "Transaction not found"}, 404
+
+#Search operation: Search transactions
+@app.route('/search', methods=['GET', 'POST'])
+def search_transactions():
+    if request.method == 'POST':
+        # Retrieve min and max amounts from form and convert to float
+        min_amount = float(request.form.get('min_amount'))
+        max_amount = float(request.form.get('max_amount'))
+        
+        # Filter transactions within the specified range
+        filtered_transactions = [
+            t for t in transactions if min_amount <= t['amount'] <= max_amount
+        ]
+
+        # Render the results page with filtered transactions
+        return render_template("transactions.html", transactions = filtered_transactions)
+
+        # For GET request, render the search form
+    return render_template('search.html')
+    
+#Add Operation: Adding total amounts of transactions
+@app.route('/balance')
+def total_balance():
+    # Calculate total balance by summing all transaction amounts
+    total = sum(t['amount'] for t in transactions)
+    return {'message': f'Total Balance: {total}'}
 
 # Run the Flask app
 if __name__ == "__main__":
